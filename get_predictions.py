@@ -1,13 +1,8 @@
 # Copyright 2017 CrowdFlower, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# The code is adapted from Tensorflow code that is open source and available under Apache License at:
+# The Code below is adapted from Tensorflow code that is open source and available under Apache License at:
 # https://github.com/tensorflow
+# The TensorFlow Authors. All Rights Reserved.
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +11,7 @@
 # limitations under the License.
 # ==============================================================================
 """
-Code to get predictions across a number of labels and order those labels for active learning.
-
-There are a number of Active Learning strategies implemented: de-comment to test each one.
-
-Example usage, to get the first 2000 items by a given strategy:
-
-`get_predictions.py --directory=raw_data >all_predictions.txt`
-`grep "^raw_data" all_predictions.txt | head -2000`
-
-
+Code to get predictions across a number of labels and order those labels for active learning
 
 """
 from __future__ import absolute_import
@@ -134,9 +120,33 @@ def get_image_prediction(sess, image, labels):
                           FLAGS.num_top_predictions)
 
   return predictions
+
+
+
+def cp_file(path, directory):
+  """Copies the given file to the new directory"""
   
+  if not os.path.exists(directory):
+    os.makedirs(directory)
+
+  label = re.sub(FLAGS.directory+"\/","",path)
+  label = re.sub("[^\/]*$","",label)  
+  sub_directory = directory+"/"+label
+  filen = re.sub(".*\/","",path)  
+  
+  if not os.path.exists(sub_directory):
+    os.makedirs(sub_directory)
+
+  target = sub_directory+filen
+
+  if os.path.isfile(target):
+    return False
+  else:
+    os.system("cp "+path+" "+target)
+    return True
 
 
+  
 def main(argv):
   """Runs inference on images."""
   if argv[1:]:
@@ -185,8 +195,8 @@ def main(argv):
       fp = 0 # number of false positives overall
 
       for image in images:
-        if random.random() > 0.05:  # speed up test by reducing to just 20%
-          continue
+        # if random.random() > 0.001:  # speed up test by reducing to just 3%
+        #  continue
         
         image = image.rstrip()
         
@@ -209,13 +219,18 @@ def main(argv):
           elif confidence > second_confidence:
             second_prediction = prediction
             second_confidence = confidence
-            
+
+        if top_confidence == 0.0 or second_confidence == 0.0:
+          continue # something went wrong, most likely a corrupted file
+        
         # get the ratio of top confidence to second most confident
         ratio = top_confidence / second_confidence
+        rand = random.random()
+        difference = top_confidence - second_confidence
         
         # WHAT WE WANT TO CAPTURE ABOUT EACH IMAGE TO USE FOR ACTIVE LEARNING
-        image_info = [image, top_prediction, top_confidence, second_prediction, second_confidence, ratio]
-        print(image_info)
+        image_info = [image, top_prediction, top_confidence, second_prediction, second_confidence, ratio, rand, difference]
+        # print(image_info)
         all_predictions.append(image_info)
 
         # update accuracy metrics
@@ -236,8 +251,8 @@ def main(argv):
         precision = tp / (tp + fp)
         recall = tp / ( tp + fn )
         fscore = (2* precision * recall) / (precision + recall)
-      print(label+ " f-score:")
-      print(fscore)
+      # print(label+ " f-score:")
+      # print(fscore)
       
       microfscores += fscore * count 
       macrofscores += fscore
@@ -250,26 +265,41 @@ def main(argv):
   print("Macro-f: ")
   print(macrof)
 
+
+  if FLAGS.directory == "test_data":
+    exit()
   
   # IMPLEMENT STRATEGY FOR ACTIVE LEARNING
-
-  # UNCOMMENT FOR DIFFERENT STRATEGIES
   
+  
+  print("CONFIDENCE")
   # 1. ORDER BY THE LEAST CONFIDENT TO MOST CONFIDENT
   all_predictions.sort(key=lambda x: x[2], reverse=False)
+  c = 0 
   for image_info in all_predictions:
-  print(image_info[0])
-  
+    print(image_info[0])
+    if c < 2000:
+      if cp_file(image_info[0], "training_data_confidence"):
+        c+=1
+
+
+        
+  print("RATIOS")    
   # 2. ORDER BY THE CLOSEST RATIOS
-  '''
   all_predictions.sort(key=lambda x: x[5], reverse=False)
+  c = 0
   for image_info in all_predictions:
-  print(image_info[0])
-  '''
+    print(image_info[0])
+    if c < 2000:
+      if cp_file(image_info[0], "training_data_ratios"):
+        c+=1
+    
   
   # 3. STRATIFY BY LABEL, ENSURING EQUAL DISTRIBUTION ACROSS PREDICTED LABELS
-         # Can be used in combination with 1. or 2.
-  '''
+         # Could be used in combination with 1. or 2.
+
+  print("STRATIFIED")
+  all_predictions.sort(key=lambda x: x[6], reverse=False) #randomize
   ordered_labels = {} # dict of list for each label.
   for image_info in all_predictions:
     top_prediction = image_info[1]
@@ -277,22 +307,29 @@ def main(argv):
       ordered_labels[top_prediction] = []
     ordered_labels[top_prediction].append(image_info[0]) # add url to list for that label
 
+  print(ordered_labels)
+  # exit()
+    
   # interleave the per-label lists
   keep_going = True # to track whether there are any remaining to be ordered
+  c = 0
   while keep_going:
     keep_going = False
     for label in ordered_labels:
       images = ordered_labels[label]
+      print("There are "+str(len(images))+" images in "+label)
       if len(images) > 0:
         image = images.pop(0)
         keep_going = True
         print(image)
-  '''
-        
+        if c < 2000:
+          if cp_file(image, "training_data_stratified"):
+            c+=1
 
-  # 4. STRATIFY BY LABELS, ENSURING EQUAL DISTRIBUTION ACROSS EACH PAIR OF PREDICTED LABELS
-          # Can be used in combination with 1. or 2.
-  '''
+  
+  print("PAIRS")
+  # 4. STRATIFY BY LABELS, ENSURING EQUAL DISTRIBUTION ACROSS PAIR OF PREDICTED LABELS
+          # Could be used in combination with 1. or 2.
   all_predictions.sort(key=lambda x: x[5], reverse=False) 
   ordered_label_pairs = {} # dict of lists for each pair of labels label.
   for image_info in all_predictions:
@@ -303,6 +340,7 @@ def main(argv):
 
   # interleave the per-label-pair lists
   keep_going = True # to track whether there are any remaining to be ordered
+  c = 0
   while keep_going:
     keep_going = False
     for label in ordered_label_pairs:
@@ -311,10 +349,73 @@ def main(argv):
         image = images.pop(0)
         keep_going = True
         print(image)
-   '''
-                                                                                           
+        if c < 2000:
+          if cp_file(image, "training_data_pairs"):
+            c += 1
+
+            
+  print("DIFFERENCE")
+  # 5. ORDER BY THE DIFFERENCE BETWEEN MOST AND LEAST CONFIDENCE
+  all_predictions.sort(key=lambda x: x[7], reverse=False)
+  c = 0 
+  for image_info in all_predictions:
+    print(image_info[0])
+    if c < 2000:
+      cp_file(image_info[0], "training_data_difference")
+    c += 1
+
+    
+  print("RANDOM")
+  # 6. RANDOM ORDER FOR A BASELINE
+  all_predictions.sort(key=lambda x: x[7], reverse=False)
+  c = 0
+  for image_info in all_predictions:
+    print(image_info[0])
+    if c < 2000:
+      if cp_file(image_info[0], "training_data_random"):
+        c += 1
 
 
+  print("PATHOLOGICAL")
+  # 7. ORDER BY THE MOST CONFIDENT TO LEAST CONFIDENT
+  all_predictions.sort(key=lambda x: x[2], reverse=TRUE)
+  c = 0
+  for image_info in all_predictions:
+    print(image_info[0])
+    if c < 2000:
+      if cp_file(image_info[0], "training_data_pathological"):
+        c+=1
+
+
+
+  print("PATHSTRAT")
+  # 8. ORDER BY THE MOST CONFIDENT TO LEAST CONFIDENT, STRATIFIED 
+  all_predictions.sort(key=lambda x: x[2], reverse=TRUE)
+  ordered_labels = {} # dict of list for each label.
+  for image_info in all_predictions:
+    top_prediction = image_info[1]
+    if not top_prediction in ordered_labels:
+      ordered_labels[top_prediction] = []
+    ordered_labels[top_prediction].append(image_info[0]) # add url to list for that label
+      
+  # interleave the per-label lists
+  keep_going = True # to track whether there are any remaining to be ordered
+  c = 0
+  while keep_going:
+    keep_going = False
+    for label in ordered_labels:
+      images = ordered_labels[label]
+      print("There are "+str(len(images))+" images in "+label)
+      if len(images) > 0:
+        image = images.pop(0)
+        keep_going = True
+        print(image)
+        if c < 2000:
+          if cp_file(image, "training_data_path_strat"):
+            c+=1
+            
+            
+            
         
 
 if __name__ == '__main__':
