@@ -1,6 +1,10 @@
 # Active Learning Class
 Code for class on Deep Active Learning and Annotation
 
+You can download the data of Sports Images from:  https://www.dropbox.com/s/j7kyqu04slc0oiz/data.tar.gz
+
+(Warning, it's about 4GB).
+
 install your data at the same base location as the code. You should see these directories:
 
 model_files: the DL model and the cache of the image-net layers for each image.
