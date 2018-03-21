@@ -31,7 +31,20 @@ get the accuracy of the current model on the 'test_data' data.
 
 get predictions on the 'unlabeled' data, and apply Active Learning strategies to order the raw images for human annotation
 
+## Installing 
+
 * Assuming the pip installation of tensflow. See: https://www.tensorflow.org/install/
+
+At a minimum, you might get away with installing only `git` `numpy` and `tensorflow` only:
+
+`sudo yum install git`
+
+`sudo -H pip install numpy` 
+
+`sudo -H pip install tensorflow`
+
+
+
 
 
 
