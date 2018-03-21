@@ -31,17 +31,21 @@ get the accuracy of the current model on the 'test_data' data.
 
 get predictions on the 'unlabeled' data, and apply Active Learning strategies to order the raw images for human annotation
 
+When running on the raw_data, you will get the ordered outputs from the different active learning strategies in the code, with the most important item to label first. This raw data has the actual (oracle) labels. Depending on how many labels you want to 'annotate' in each cycle, you can move that image from the raw_data directory to the corresponding training directory. In reality, of course, your raw, unlabeled images will not have their labels.
+
 ## Installing 
 
-* Assuming the pip installation of tensflow. See: https://www.tensorflow.org/install/
+This assuming the pip installation of tensflow. See: https://www.tensorflow.org/install/
 
-At a minimum, you might get away with installing only `git` `numpy` and `tensorflow` only:
+At a minimum, you *might* get away with installing only `git` `numpy` and `tensorflow` only:
 
 `sudo yum install git`
 
 `sudo -H pip install numpy` 
 
 `sudo -H pip install tensorflow`
+
+... but I recommend working out what's best in your environment, and be careful with 'sudo's that you meet on the internet!
 
 
 
