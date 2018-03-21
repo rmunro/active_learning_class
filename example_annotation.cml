@@ -1,0 +1,32 @@
+
+<div class="row-fluid">
+  <div class="span6">
+    <img src="{{image_url}}" />
+  </div>
+  <div class="span6">
+    <cml:radios name="sports_present" label="Are there any sports in this image?" validates="required">
+      <cml:radio value="yes" label="Yes"></cml:radio>
+      <cml:radio value="no" label="No"></cml:radio>
+      <cml:radio value="unclear" label="Unclear"></cml:radio>
+    </cml:radios>
+    <cml:checkboxes name="sport_types" label="What types of sports are present in this image?" validates="required" only-if="sports_present:[yes]" exact="true">
+      <cml:checkbox value="skiing" label="Skiing"></cml:checkbox>
+      <cml:checkbox value="basketball" label="Basketball"></cml:checkbox>
+      <cml:checkbox value="tennis" label="Tennis"></cml:checkbox>
+      <cml:checkbox value="fishing" label="Fishing"></cml:checkbox>
+      <cml:checkbox value="wakeboarding" label="Wakeboarding"></cml:checkbox>
+      <cml:checkbox value="horse riding" label="Horse riding"></cml:checkbox>
+      <cml:checkbox value="cycling" label="Cycling"></cml:checkbox>
+      <cml:checkbox value="cricket" label="Cricket"></cml:checkbox>
+      <cml:checkbox value="motor racing" label="Motor Racing"></cml:checkbox>
+      <cml:checkbox value="figure skating" label="Figure Skating"></cml:checkbox>
+      <cml:checkbox value="golf" label="Golf"></cml:checkbox>
+      <cml:checkbox value="football american" label="Football (American)"></cml:checkbox>
+      <cml:checkbox value="football soccer" label="Football (Soccer)"></cml:checkbox>
+      <cml:checkbox value="football rugby" label="Football (Rugby)"></cml:checkbox>
+      <cml:checkbox value="dancing" label="Dancing"></cml:checkbox>
+      <cml:checkbox value="other" label="Other"></cml:checkbox>
+    </cml:checkboxes>
+    <cml:text name="other_sports_type" label="Please specify what 'Other' sport type is present in this image." validates="required alpha clean:['clean','lowercase']" only-if="sport_types:[other]" multiple="true"></cml:text>
+  </div>
+</div>
